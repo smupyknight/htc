@@ -1,5 +1,5 @@
 ---
-name: "htc-1.0.0"
+name: "snowgem-1.0.13"
 enable_cache: true
 distro: "debian"
 suites:
@@ -25,8 +25,8 @@ packages:
 - "wget"
 - "zlib1g-dev"
 remotes:
-- "url": "https://github.com/smupyknight/htc"
-  "dir": "htc"
+- "url": "https://github.com/snowgem/snowgem.git"
+  "dir": "snowgem"
 files: []
 script: |
   WRAP_DIR=$HOME/wrapped
@@ -38,8 +38,7 @@ script: |
   HOST_CFLAGS="-fwrapv -fno-strict-aliasing -Werror -g"
   HOST_CXXFLAGS="-fwrapv -fno-strict-aliasing -Werror -g"
   HOST_LDFLAGS=-static-libstdc++
-
-  export QT_RCC_TEST=1
+  export QT_RCC_TEST=0
   export GZIP="-9n"
   export TAR_OPTIONS="--mtime="$REFERENCE_DATE\\\ $REFERENCE_TIME""
   export TZ="UTC"
@@ -50,7 +49,6 @@ script: |
     export BASE_CACHE=${GBUILD_PACKAGE_CACHE}
     mkdir -p ${BASE_CACHE} ${SOURCES_PATH}
   fi
-
   function create_global_faketime_wrappers {
   for prog in ${FAKETIME_PROGS}; do
     echo '#!/bin/bash' > ${WRAP_DIR}/${prog}
@@ -61,7 +59,6 @@ script: |
     chmod +x ${WRAP_DIR}/${prog}
   done
   }
-
   function create_per-host_faketime_wrappers {
   for i in $HOSTS; do
     for prog in ${FAKETIME_HOST_PROGS}; do
@@ -74,37 +71,31 @@ script: |
     done
   done
   }
-
   export PATH=${WRAP_DIR}:${PATH}
-
   # Faketime for depends so intermediate results are comparable
   create_global_faketime_wrappers "2000-01-01 12:00:00"
   create_per-host_faketime_wrappers "2000-01-01 12:00:00"
-
-  cd htc
+  cd snowgem
   BASEPREFIX=`pwd`/depends
   # Build dependencies for each host
   for i in $HOSTS; do
     NO_PROTON="x" make ${MAKEOPTS} -C ${BASEPREFIX} HOST="${i}"
   done
-
   # Faketime for binaries
   create_global_faketime_wrappers "${REFERENCE_DATETIME}"
   create_per-host_faketime_wrappers "${REFERENCE_DATETIME}"
-
   # Create the release tarball using (arbitrarily) the first host
   ./autogen.sh
   CONFIG_SITE=${BASEPREFIX}/`echo "${HOSTS}" | awk '{print $1;}'`/share/config.site ./configure --prefix=/
   make dist
-  SOURCEDIST=`echo htc-*.tar.gz`
+  SOURCEDIST=`echo snowgem-*.tar.gz`
   DISTNAME=`echo ${SOURCEDIST} | sed 's/.tar.*//'`
   # Correct tar file order
   mkdir -p temp
   pushd temp
   tar xf ../$SOURCEDIST
-  find htc-* | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ../$SOURCEDIST
+  find snowgem* | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ../$SOURCEDIST
   popd
-
   ORIGPATH="$PATH"
   # Extract the release tarball into a dir for each host and build
   for i in ${HOSTS}; do
@@ -114,7 +105,6 @@ script: |
     INSTALLPATH=`pwd`/installed/${DISTNAME}
     mkdir -p ${INSTALLPATH}
     tar --strip-components=1 -xf ../$SOURCEDIST
-
     CONFIG_SITE=${BASEPREFIX}/${i}/share/config.site ./configure --prefix=/ --disable-ccache --disable-maintainer-mode --disable-dependency-tracking ${CONFIGFLAGS} CFLAGS="${HOST_CFLAGS}" CXXFLAGS="${HOST_CXXFLAGS}" LDFLAGS="${HOST_LDFLAGS}"
     make ${MAKEOPTS}
     make ${MAKEOPTS} -C src check-security

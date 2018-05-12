@@ -1,5 +1,5 @@
 ---
-name: "snowgem-1.0.13"
+name: "htc-1.0.0"
 enable_cache: true
 distro: "debian"
 suites:
@@ -25,8 +25,8 @@ packages:
 - "wget"
 - "zlib1g-dev"
 remotes:
-- "url": "https://github.com/snowgem/snowgem.git"
-  "dir": "snowgem"
+- "url": "https://github.com/smupyknight/htc"
+  "dir": "htc"
 files: []
 script: |
   WRAP_DIR=$HOME/wrapped
@@ -39,7 +39,7 @@ script: |
   HOST_CXXFLAGS="-fwrapv -fno-strict-aliasing -Werror -g"
   HOST_LDFLAGS=-static-libstdc++
 
-  export QT_RCC_TEST=0
+  export QT_RCC_TEST=1
   export GZIP="-9n"
   export TAR_OPTIONS="--mtime="$REFERENCE_DATE\\\ $REFERENCE_TIME""
   export TZ="UTC"
@@ -81,7 +81,7 @@ script: |
   create_global_faketime_wrappers "2000-01-01 12:00:00"
   create_per-host_faketime_wrappers "2000-01-01 12:00:00"
 
-  cd snowgem
+  cd htc
   BASEPREFIX=`pwd`/depends
   # Build dependencies for each host
   for i in $HOSTS; do
@@ -96,13 +96,13 @@ script: |
   ./autogen.sh
   CONFIG_SITE=${BASEPREFIX}/`echo "${HOSTS}" | awk '{print $1;}'`/share/config.site ./configure --prefix=/
   make dist
-  SOURCEDIST=`echo snowgem-*.tar.gz`
+  SOURCEDIST=`echo htc-*.tar.gz`
   DISTNAME=`echo ${SOURCEDIST} | sed 's/.tar.*//'`
   # Correct tar file order
   mkdir -p temp
   pushd temp
   tar xf ../$SOURCEDIST
-  find snowgem* | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ../$SOURCEDIST
+  find htc-* | sort | tar --no-recursion --mode='u+rw,go+r-w,a+X' --owner=0 --group=0 -c -T - | gzip -9n > ../$SOURCEDIST
   popd
 
   ORIGPATH="$PATH"

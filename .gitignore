@@ -77,7 +77,6 @@ src/univalue/gen
 *.la
 
 # Compilation
-Makefile
 
 # Unit-tests
 Makefile.test
